@@ -372,6 +372,10 @@ async def cmd_slash_whitelist_add(interaction: discord.Interaction, member: disc
 @bot.event
 async def on_ready():
     print(f"bot connected as {bot.user} (id: {bot.user.id})", flush=True)
+    bot.add_view(RolesView())
+    bot.add_view(WhitelistLandingView())
+    bot.add_view(WhitelistApprovalView())
+    bot.add_view(TicketLauncher())
     try:
         synced = await bot.tree.sync()
         print(f"synced {len(synced)} commands", flush=True)
