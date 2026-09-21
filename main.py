@@ -543,11 +543,13 @@ async def on_ready():
     bot.add_view(WhitelistLandingView())
     bot.add_view(WhitelistApprovalView())
     bot.add_view(TicketLauncher())
-    try:
-        synced = await bot.tree.sync()
-        print(f"synced {len(synced)} commands", flush=True)
-    except Exception as e:
-        print(f"sync error: {e}", flush=True)
+    for guild in bot.guilds:
+        try:
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
+            print(f"synced {len(synced)} commands to {guild.name}", flush=True)
+        except Exception as e:
+            print(f"sync error on {guild.name}: {e}", flush=True)
     for guild in bot.guilds:
         await initSrv(guild)
     print("server setup done", flush=True)
