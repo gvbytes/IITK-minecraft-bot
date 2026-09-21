@@ -646,6 +646,7 @@ async def initPanels(guild: discord.Guild):
     r_emb.add_field(name="2. Fair Play", value="No hacked clients, baritone, or x-ray packs.", inline=False)
     r_emb.add_field(name="3. Campus Code", value="Keep discussions civil. No harassment or toxic behavior.", inline=False)
     r_emb.add_field(name="4. Farms & Tech", value="Large farms must have an accessible off-switch.", inline=False)
+    r_emb.add_field(name="5. PvP Rules", value="No combat logging during fights. No spawn camping or portal trapping.", inline=False)
     await postP(discord.utils.get(guild.text_channels, name="📜・rules-and-conduct"), r_emb)
     # guide panel
     ip_str = serverIp if serverIp else "Campus LAN IP (172.x.x.x) or Playit tunnel"
