@@ -41,4 +41,5 @@ python main.py
 - role selection buttons for java/bedrock edition and playstyles
 - whitelist applications modal with staff review buttons
 - support ticket launcher for grief reports and bug tracking
+- persistent whitelist registry saved to json
 - http keepalive server for cloud deployment
