@@ -433,7 +433,7 @@ async def cmd_text_coords(ctx):
 
 @bot.tree.command(name="rules", description="Quick overview of server rules")
 async def cmd_slash_rules(interaction: discord.Interaction):
-    emb = discord.Embed(title="server rules", description="1. No griefing or stealing (CoreProtect logged).\n2. No hacked clients or x-ray.\n3. Campus honor code.\n4. Farms need an accessible off-switch.\n\nFull details in <#rules-and-conduct>.", color=discord.Color.blue())
+    emb = discord.Embed(title="server rules", description="1. No griefing or stealing (CoreProtect logged).\n2. No hacked clients or x-ray.\n3. Fair combat and no combat logging.\n4. Campus honor code.\n5. Farms need an accessible off-switch.\n\nFull details in <#rules-and-conduct>.", color=discord.Color.blue())
     await interaction.response.send_message(embed=emb)
 
 @bot.command(name="rules")
@@ -629,6 +629,7 @@ async def init_panels(guild: discord.Guild):
     r_emb.add_field(name="2. Fair Play", value="No hacked clients, baritone, or x-ray packs.", inline=False)
     r_emb.add_field(name="3. Campus Code", value="Keep discussions civil. No harassment or toxic behavior.", inline=False)
     r_emb.add_field(name="4. Farms & Tech", value="Large farms must have an accessible off-switch.", inline=False)
+    r_emb.add_field(name="5. PvP Rules", value="No combat logging during fights. No spawn camping or portal trapping.", inline=False)
     await post_panel(discord.utils.get(guild.text_channels, name="📜・rules-and-conduct"), r_emb)
 
     ip_str = server_ip if server_ip else "Campus LAN IP (172.x.x.x) or Playit tunnel"
