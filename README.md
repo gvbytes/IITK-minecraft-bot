@@ -40,6 +40,7 @@ python main.py
 - interactive hostel / hall selection dropdown for campus halls (hall 1 to 14, gh)
 - role selection buttons for java/bedrock edition and playstyles
 - whitelist applications modal with staff review buttons
+- duplicate prevention checking ign, roll number, and existing roles
 - support ticket launcher for grief reports and bug tracking
 - persistent whitelist registry saved to json
 - http keepalive server for cloud deployment

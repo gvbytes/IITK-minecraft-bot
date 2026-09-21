@@ -248,17 +248,42 @@ class WhitelistModal(discord.ui.Modal, title="whitelist application"):
         rev_ch = discord.utils.get(guild.text_channels, name="📋・whitelist-review")
         if not rev_ch:
             rev_ch = discord.utils.get(guild.text_channels, name="📋・whitelist-requests")
+        ign = self.ign.value.strip()
+        roll = self.roll_no.value.strip()
+        db = get_db()
+        for ex_ign, data in db.items():
+            if ex_ign.lower() == ign.lower():
+                await interaction.response.send_message(f"ign {ign} is already registered.", ephemeral=True)
+                return
+            if roll and data.get("roll_no") == roll and (data.get("discord_id") != interaction.user.id):
+                await interaction.response.send_message(f"roll number {roll} is already registered.", ephemeral=True)
+                return
+        if rev_ch:
+            try:
+                async for msg in rev_ch.history(limit=50):
+                    if msg.embeds:
+                        emb = msg.embeds[0]
+                        if "application" in (emb.title or "").lower():
+                            for f in emb.fields:
+                                if "Discord" in f.name and str(interaction.user.id) in f.value:
+                                    await interaction.response.send_message("you already have a pending application.", ephemeral=True)
+                                    return
+                                elif "IGN" in f.name and f.value.replace("`", "").strip().lower() == ign.lower():
+                                    await interaction.response.send_message(f"application for {ign} is already pending.", ephemeral=True)
+                                    return
+            except Exception:
+                pass
         emb = discord.Embed(title="new whitelist application", color=discord.Color.teal(), timestamp=discord.utils.utcnow())
         emb.set_thumbnail(url=interaction.user.display_avatar.url)
         emb.add_field(name="Discord User", value=f"{interaction.user.mention} (`{interaction.user.id}`)", inline=False)
-        emb.add_field(name="Minecraft IGN", value=f"`{self.ign.value.strip()}`", inline=True)
+        emb.add_field(name="Minecraft IGN", value=f"`{ign}`", inline=True)
         emb.add_field(name="Edition", value=f"`{self.edition.value.strip().capitalize()}`", inline=True)
-        emb.add_field(name="Roll Number", value=f"`{self.roll_no.value.strip()}`", inline=True)
+        emb.add_field(name="Roll Number", value=f"`{roll}`", inline=True)
         emb.add_field(name="Hostel", value=f"`{self.hostel.value.strip() or 'N/A'}`", inline=True)
-        view = WhitelistApprovalView(applicant_id=interaction.user.id, ign=self.ign.value.strip())
+        view = WhitelistApprovalView(uid=interaction.user.id, ign=ign)
         if rev_ch:
             await rev_ch.send(embed=emb, view=view)
-        await interaction.response.send_message(f"application submitted for `{self.ign.value.strip()}`.", ephemeral=True)
+        await interaction.response.send_message(f"application for {ign} submitted.", ephemeral=True)
 
 class WhitelistApprovalView(discord.ui.View):
     def __init__(self, uid: Optional[int] = None, ign: Optional[str] = None):
@@ -346,6 +371,30 @@ class WhitelistLandingView(discord.ui.View):
 
     @discord.ui.button(label="Apply for Whitelist", style=discord.ButtonStyle.success, emoji="📝", custom_id="open_wl_modal")
     async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild = interaction.guild
+        member = interaction.user
+        wl_role = discord.utils.get(guild.roles, name="⛏️ SMP Whitelisted")
+        if wl_role and wl_role in member.roles:
+            await interaction.response.send_message("you are already whitelisted.", ephemeral=True)
+            return
+        db = get_db()
+        for ign, data in db.items():
+            if data.get("discord_id") == member.id:
+                await interaction.response.send_message(f"already whitelisted as `{ign}`.", ephemeral=True)
+                return
+        rev_ch = discord.utils.get(guild.text_channels, name="📋・whitelist-review")
+        if rev_ch:
+            try:
+                async for msg in rev_ch.history(limit=50):
+                    if msg.embeds:
+                        emb = msg.embeds[0]
+                        if "application" in (emb.title or "").lower():
+                            for f in emb.fields:
+                                if "Discord" in f.name and str(member.id) in f.value:
+                                    await interaction.response.send_message("you already have a pending application.", ephemeral=True)
+                                    return
+            except Exception:
+                pass
         await interaction.response.send_modal(WhitelistModal())
 
 class TicketLauncher(discord.ui.View):
