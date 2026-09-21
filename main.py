@@ -280,9 +280,103 @@ class TicketLauncher(discord.ui.View):
         except Exception as e:
             await interaction.response.send_message(f"failed to create ticket: {e}", ephemeral=True)
 
+@bot.tree.command(name="help", description="Show server guide and commands")
+async def cmd_slash_help(interaction: discord.Interaction):
+    emb = discord.Embed(title="server guide & commands", color=discord.Color.from_rgb(33, 150, 243))
+    emb.add_field(name="getting started", value="• roles: <#pick-your-roles>\n• whitelist: <#whitelist-requests>\n• support: <#create-a-ticket>", inline=False)
+    emb.add_field(name="commands", value="• `/ip` or `!iitk ip` - server address\n• `/coords` or `!iitk coords` - key coordinates\n• `/rules` or `!iitk rules` - rules summary\n• `/ping` or `!iitk ping` - bot latency\n• `/whitelist_list` - whitelisted players\n• `/help` - this guide", inline=False)
+    emb.add_field(name="staff", value="• `/whitelist_add <user> <ign>` - add player\n• `/whitelist_export` - export commands and json", inline=False)
+    await interaction.response.send_message(embed=emb)
+
+@bot.command(name="help")
+async def cmd_text_help(ctx):
+    emb = discord.Embed(title="server guide & commands", color=discord.Color.from_rgb(33, 150, 243))
+    emb.add_field(name="getting started", value="• roles: #pick-your-roles\n• whitelist: #whitelist-requests\n• support: #create-a-ticket", inline=False)
+    emb.add_field(name="commands", value="• `!iitk ip` - server address\n• `!iitk coords` - key coordinates\n• `!iitk rules` - rules summary\n• `!iitk ping` - bot latency\n• `!iitk help` - this guide", inline=False)
+    await ctx.send(embed=emb)
+
+@bot.tree.command(name="ip", description="Get server connection details")
+async def cmd_slash_ip(interaction: discord.Interaction):
+    ip_str = serverIp if serverIp else "Campus LAN IP (172.x.x.x) or Playit tunnel"
+    emb = discord.Embed(title="server connection info", color=discord.Color.from_rgb(46, 204, 113))
+    emb.add_field(name="Java Edition", value=f"Address: `{ip_str}`\nPort: `25565`\nVersion: `1.20.x / 1.21.x`", inline=False)
+    emb.add_field(name="Bedrock / PE", value=f"Address: `{ip_str}`\nPort: `19132`", inline=False)
+    emb.add_field(name="Campus Network", value="Direct connection on hostel wifi/lan. Check <#announcements> for tunnel links.", inline=False)
+    await interaction.response.send_message(embed=emb)
+
+@bot.command(name="ip")
+async def cmd_text_ip(ctx):
+    ip_str = serverIp if serverIp else "Campus LAN IP (172.x.x.x) or Playit tunnel"
+    emb = discord.Embed(title="server connection info", color=discord.Color.from_rgb(46, 204, 113))
+    emb.add_field(name="Java Edition", value=f"Address: `{ip_str}`\nPort: `25565`\nVersion: `1.20.x / 1.21.x`", inline=False)
+    emb.add_field(name="Bedrock / PE", value=f"Address: `{ip_str}`\nPort: `19132`", inline=False)
+    await ctx.send(embed=emb)
+
+@bot.tree.command(name="coords", description="View landmark coordinates")
+async def cmd_slash_coords(interaction: discord.Interaction):
+    emb = discord.Embed(title="coordinates", color=discord.Color.from_rgb(241, 196, 15))
+    emb.add_field(name="Spawn", value="`X: 0, Y: 70, Z: 0`", inline=True)
+    emb.add_field(name="Nether Hub", value="`X: 0, Y: 120, Z: 0`", inline=True)
+    emb.add_field(name="Marketplace", value="check <#campus-marketplace>", inline=True)
+    emb.add_field(name="End Portal", value="check <#dynmap-and-coords>", inline=True)
+    emb.add_field(name="Halls", value="check <#hall-factions>", inline=True)
+    await interaction.response.send_message(embed=emb)
+
+@bot.command(name="coords")
+async def cmd_text_coords(ctx):
+    emb = discord.Embed(title="coordinates", color=discord.Color.from_rgb(241, 196, 15))
+    emb.add_field(name="Spawn", value="`X: 0, Y: 70, Z: 0`", inline=True)
+    emb.add_field(name="Nether Hub", value="`X: 0, Y: 120, Z: 0`", inline=True)
+    emb.add_field(name="Marketplace", value="check #campus-marketplace", inline=True)
+    await ctx.send(embed=emb)
+
+@bot.tree.command(name="rules", description="Quick overview of server rules")
+async def cmd_slash_rules(interaction: discord.Interaction):
+    emb = discord.Embed(title="server rules", description="1. No griefing or stealing (CoreProtect logged).\n2. No hacked clients or x-ray.\n3. Fair combat and no combat logging.\n4. Campus honor code.\n5. Farms need an accessible off-switch.\n\nFull details in <#rules-and-conduct>.", color=discord.Color.from_rgb(33, 150, 243))
+    await interaction.response.send_message(embed=emb)
+
+@bot.command(name="rules")
+async def cmd_text_rules(ctx):
+    await ctx.send("rules summary in `#rules-and-conduct`.")
+
+@bot.tree.command(name="ping", description="Check bot latency")
+async def cmd_slash_ping(interaction: discord.Interaction):
+    latency = round(bot.latency * 1000)
+    await interaction.response.send_message(f"pong: `{latency}ms`")
+
+@bot.command(name="ping")
+async def cmd_text_ping(ctx):
+    latency = round(bot.latency * 1000)
+    await ctx.send(f"pong: `{latency}ms`")
+
+@bot.tree.command(name="whitelist_add", description="Staff: Manually whitelist a player")
+async def cmd_slash_whitelist_add(interaction: discord.Interaction, member: discord.Member, ign: str):
+    staff = any(r.name in ["👑 Server Admin / OP", "🛡️ Moderator", "⚙️ SysAdmin / Host"] for r in interaction.user.roles)
+    if not (staff or interaction.user.guild_permissions.administrator):
+        await interaction.response.send_message("staff only.", ephemeral=True)
+        return
+    wlRole = discord.utils.get(interaction.guild.roles, name="⛏️ SMP Whitelisted")
+    vRole = discord.utils.get(interaction.guild.roles, name="🎓 Verified IITKian")
+    if wlRole:
+        await member.add_roles(wlRole)
+    if vRole:
+        await member.add_roles(vRole)
+    try:
+        await member.send(f"whitelisted on IITK Minecraft as `{ign}`. check #server-ip-and-guide for connection details.")
+    except Exception:
+        pass
+    saveWl(ign=ign, uid=member.id)
+    await interaction.response.send_message(f"whitelisted {member.mention} as `{ign}`.")
+
+
 @bot.event
 async def on_ready():
     print(f"bot connected as {bot.user} (id: {bot.user.id})", flush=True)
+    try:
+        synced = await bot.tree.sync()
+        print(f"synced {len(synced)} commands", flush=True)
+    except Exception as e:
+        print(f"sync error: {e}", flush=True)
     for guild in bot.guilds:
         await initSrv(guild)
     print("server setup done", flush=True)
