@@ -8,7 +8,6 @@ import io
 import re
 from typing import Optional
 from aiohttp import web
-
 os.environ["SSL_CERT_FILE"] = certifi.where()
 ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
@@ -250,17 +249,43 @@ class WhitelistModal(discord.ui.Modal, title="whitelist application"):
         revCh = discord.utils.get(guild.text_channels, name="📋・whitelist-review")
         if not revCh:
             revCh = discord.utils.get(guild.text_channels, name="📋・whitelist-requests")
+        ign = self.ign.value.strip()
+        roll = self.roll_no.value.strip()
+        db = getDb()
+        # check duplicate ign or roll
+        for ex_ign, data in db.items():
+            if ex_ign.lower() == ign.lower():
+                await interaction.response.send_message(f"ign {ign} is already registered.", ephemeral=True)
+                return
+            if roll and data.get("roll_no") == roll and (data.get("discord_id") != interaction.user.id):
+                await interaction.response.send_message(f"roll number {roll} is already registered.", ephemeral=True)
+                return
+        if revCh:
+            try:
+                async for msg in revCh.history(limit=50):
+                    if msg.embeds:
+                        emb = msg.embeds[0]
+                        if "Application" in (emb.title or ""):
+                            for f in emb.fields:
+                                if "Discord" in f.name and str(interaction.user.id) in f.value:
+                                    await interaction.response.send_message("you already have a pending application.", ephemeral=True)
+                                    return
+                                elif "IGN" in f.name and f.value.replace("`", "").strip().lower() == ign.lower():
+                                    await interaction.response.send_message(f"application for {ign} is already pending.", ephemeral=True)
+                                    return
+            except Exception:
+                pass
         emb = discord.Embed(title="new whitelist application", color=discord.Color.from_rgb(26, 188, 156), timestamp=discord.utils.utcnow())
         emb.set_thumbnail(url=interaction.user.display_avatar.url)
         emb.add_field(name="Discord User", value=f"{interaction.user.mention} (`{interaction.user.id}`)", inline=False)
-        emb.add_field(name="Minecraft IGN", value=f"`{self.ign.value.strip()}`", inline=True)
+        emb.add_field(name="Minecraft IGN", value=f"`{ign}`", inline=True)
         emb.add_field(name="Edition", value=f"`{self.edition.value.strip().capitalize()}`", inline=True)
-        emb.add_field(name="Roll Number", value=f"`{self.roll_no.value.strip()}`", inline=True)
-        emb.add_field(name="Hostel", value=f"`{self.hostel.value.strip() or 'N/A'}`", inline=True)
-        view = WhitelistApprovalView(applicant_id=interaction.user.id, ign=self.ign.value.strip())
+        emb.add_field(name="Roll Number", value=f"`{roll}`", inline=True)
+        emb.add_field(name="Hostel", value=f"`{self.hostel.value.strip() or "N/A"}`", inline=True)
+        view = WhitelistApprovalView(uid=interaction.user.id, ign=ign)
         if revCh:
             await revCh.send(embed=emb, view=view)
-        await interaction.response.send_message(f"application submitted for `{self.ign.value.strip()}`.", ephemeral=True)
+        await interaction.response.send_message(f"application for {ign} submitted.", ephemeral=True)
 
 class WhitelistApprovalView(discord.ui.View):
     def __init__(self, uid: Optional[int] = None, ign: Optional[str] = None):
@@ -341,6 +366,30 @@ class WhitelistLandingView(discord.ui.View):
 
     @discord.ui.button(label="Apply for Whitelist", style=discord.ButtonStyle.success, emoji="📝", custom_id="open_wl_modal")
     async def open_modal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        guild = interaction.guild
+        member = interaction.user
+        wlRole = discord.utils.get(guild.roles, name="⛏️ SMP Whitelisted")
+        if wlRole and wlRole in member.roles:
+            await interaction.response.send_message("you are already whitelisted.", ephemeral=True)
+            return
+        db = getDb()
+        for ign, data in db.items():
+            if data.get("discord_id") == member.id:
+                await interaction.response.send_message(f"already whitelisted as `{ign}`.", ephemeral=True)
+                return
+        revCh = discord.utils.get(guild.text_channels, name="📋・whitelist-review")
+        if revCh:
+            try:
+                async for msg in revCh.history(limit=50):
+                    if msg.embeds:
+                        emb = msg.embeds[0]
+                        if "Application" in (emb.title or ""):
+                            for f in emb.fields:
+                                if "Discord" in f.name and str(member.id) in f.value:
+                                    await interaction.response.send_message("you already have a pending application.", ephemeral=True)
+                                    return
+            except Exception:
+                pass
         await interaction.response.send_modal(WhitelistModal())
 
 class TicketLauncher(discord.ui.View):
@@ -465,7 +514,6 @@ async def cmd_slash_whitelist_add(interaction: discord.Interaction, member: disc
     saveWl(ign=ign, uid=member.id)
     await interaction.response.send_message(f"whitelisted {member.mention} as `{ign}`.")
 
-
 @bot.tree.command(name="whitelist_export", description="Staff: Export all whitelisted players")
 async def cmd_slash_whitelist_export(interaction: discord.Interaction):
     staff = any(r.name in ["👑 Server Admin / OP", "🛡️ Moderator", "⚙️ SysAdmin / Host"] for r in interaction.user.roles)
@@ -534,7 +582,6 @@ async def cmd_text_whitelist_list(ctx):
         preview += f"\n*...and {len(items) - 30} more*"
     emb = discord.Embed(title=f"whitelisted players ({len(db)})", description=preview, color=discord.Color.from_rgb(26, 188, 156))
     await ctx.send(embed=emb)
-
 
 @bot.event
 async def on_ready():
@@ -648,6 +695,7 @@ async def initPanels(guild: discord.Guild):
     r_emb.add_field(name="4. Farms & Tech", value="Large farms must have an accessible off-switch.", inline=False)
     r_emb.add_field(name="5. PvP Rules", value="No combat logging during fights. No spawn camping or portal trapping.", inline=False)
     await postP(discord.utils.get(guild.text_channels, name="📜・rules-and-conduct"), r_emb)
+
     # guide panel
     ip_str = serverIp if serverIp else "Campus LAN IP (172.x.x.x) or Playit tunnel"
     g_emb = discord.Embed(title="connection guide", description="how to connect to the server from campus hostels or remote.", color=discord.Color.from_rgb(46, 204, 113))
