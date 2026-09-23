@@ -17,8 +17,8 @@ from discord.ext import commands
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix="!iitk", intents=intents, help_command=None)
 
-token = os.environ.get("DISCORD_BOT_TOKEN", "").strip() or (sys.argv[1].strip() if len(sys.argv) > 1 else "")
-serverIp = os.environ.get("MINECRAFT_SERVER_IP", "").strip() or (sys.argv[2].strip() if len(sys.argv) > 2 else "")
+token = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
+serverIp = os.environ.get("MINECRAFT_SERVER_IP", "").strip()
 port = int(os.environ.get("PORT", 10000))
 dbFile = os.path.join(os.path.dirname(os.path.abspath(__file__)), "whitelist_registry.json")
 
@@ -731,7 +731,7 @@ async def runWeb():
 
 async def main():
     if not token:
-        print("error: DISCORD_BOT_TOKEN missing or arg not provided")
+        print("error: DISCORD_BOT_TOKEN missing")
         sys.exit(1)
     await runWeb()
     await bot.start(token)
