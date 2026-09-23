@@ -8,6 +8,9 @@ import io
 import re
 from typing import Optional
 from aiohttp import web
+from dotenv import load_dotenv
+
+load_dotenv()
 os.environ["SSL_CERT_FILE"] = certifi.where()
 ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
