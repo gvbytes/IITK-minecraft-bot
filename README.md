@@ -34,6 +34,12 @@ start the bot:
 python main.py
 ```
 
+## environment variables
+
+- `DISCORD_BOT_TOKEN` : bot token from discord developer portal
+- `MINECRAFT_SERVER_IP` : server ip shown by /ip command
+- `PORT` : port for the http health check server (default: 10000)
+
 ## commands
 
 - `!iitk ip` / `/ip` - server address and ports
