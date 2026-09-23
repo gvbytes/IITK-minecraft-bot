@@ -34,6 +34,14 @@ start the bot:
 python main.py
 ```
 
+## commands
+
+- `!iitk ip` / `/ip` - server address and ports
+- `!iitk coords` / `/coords` - community coordinates
+- `!iitk rules` / `/rules` - server rules summary
+- `!iitk ping` / `/ping` - bot latency
+- `!iitk help` / `/help` - command guide
+
 ## features
 
 - automatic category, channel, and permission setup
