@@ -5,7 +5,7 @@ discord bot and automation setup for the iit kanpur minecraft community and smp 
 ## files
 
 - `main.py` - bot entry point, discord views, whitelist management, and keepalive server
-- `requirements.txt` - dependencies (discord.py, aiohttp)
+- `requirements.txt` - dependencies (discord.py, aiohttp, certifi)
 - `render.yaml` - cloud service configuration
 - `.env.example` - environment variable template
 
